@@ -34,11 +34,12 @@ const Login = () => {
                 localStorage.setItem('userInfo', JSON.stringify(data));
                 navigate('/');
             } else {
-                alert('You are not an admin');
+                alert('Access Denied: You do not have admin privileges.');
             }
         } catch (error) {
-            console.error(error);
-            alert('Invalid email or password');
+            console.error('Login Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+            alert(`Login Failed: ${errorMessage}\n\nPlease check:\n1. Internet connection\n2. Backend is running\n3. Correct credentials`);
         }
     };
 
