@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import api from '../utils/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 // --- Filter Options Constants ---
 const GENDER_OPTIONS = ["Women", "Men", "Kids", "Unisex"];
@@ -17,10 +17,9 @@ const CATEGORY_STYLES = {
     "Mangalsutra": ["Modern Mangalsutra", "Traditional", "Gold Mangalsutra", "Diamond Mangalsutra", "Bracelet Mangalsutra", "Chain Mangalsutra"],
     "Pendant": ["Alphabet", "Heart", "Religious", "Casual", "Solitaire"],
     "Solitaire": ["Solitaire Rings", "Solitaire Earrings", "Solitaire Pendants", "Solitaire Mangalsutras", "Solitaire Bands"],
-    "Silver": ["Earrings", "Necklaces", "Rings", "Bracelets", "Anklets", "Toe Rings", "Nose Pins"] // Assuming 'Silver' might be selected as category
+    "Silver": ["Earrings", "Necklaces", "Rings", "Bracelets", "Anklets", "Toe Rings", "Nose Pins"]
 };
 
-// Fallback for when no category is selected or category not in map
 const DEFAULT_STYLE_OPTIONS = [
     "Solitaire", "Halo", "Vintage", "Band", "Studs", "Hoops", "Drops", "Jhumkas", "Chain", "Tennis", "Bangle"
 ];
@@ -60,13 +59,15 @@ const MultiSelect = ({ label, options, value, onChange }) => {
     );
 };
 
+const EditProduct = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
 
-const AddProduct = () => {
     // --- Basic Info ---
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
-    const [brand, setBrand] = useState('S.D. Jewels');
+    const [brand, setBrand] = useState('');
 
     // --- Pricing & Stock ---
     const [price, setPrice] = useState(0);
@@ -79,21 +80,19 @@ const AddProduct = () => {
     const [stoneType, setStoneType] = useState([]);
     const [gender, setGender] = useState([]);
     const [occasion, setOccasion] = useState([]);
-    const [collectionName, setCollectionName] = useState([]); // Kept as array for consistency
+    const [collectionName, setCollectionName] = useState([]);
 
     // --- Specifics ---
     const [weight, setWeight] = useState('');
     const [carat, setCarat] = useState('');
-    const [material, setMaterial] = useState(''); // Legacy/General
+    const [material, setMaterial] = useState('');
     const [size, setSize] = useState('');
     const [productDetails, setProductDetails] = useState('');
 
     // --- Media ---
     const [image, setImage] = useState('');
     const [uploading, setUploading] = useState(false);
-
     const [categories, setCategories] = useState([]);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -104,14 +103,55 @@ const AddProduct = () => {
                 console.error('Failed to fetch categories', error);
             }
         };
+
+        const fetchProduct = async () => {
+            try {
+                const { data } = await api.get(`/products/${id}`);
+                setName(data.name);
+                setPrice(data.price);
+                setImage(data.image);
+                setBrand(data.brand);
+                const catVal = Array.isArray(data.category) ? data.category[0] : data.category;
+                setCategory(catVal || '');
+                setCountInStock(data.countInStock);
+                setDescription(data.description);
+                setProductDetails(data.productDetails || '');
+                setWeight(data.weight || '');
+                setCarat(data.carat || '');
+                setMaterial(data.material || '');
+                setSize(data.size || '');
+
+                // Helper to safely convert existing data to array
+                const toArray = (val) => {
+                    if (Array.isArray(val)) return val;
+                    if (val && typeof val === 'string') return [val];
+                    return [];
+                };
+
+                // New Fields (Ensure Arrays)
+                setStyle(toArray(data.style));
+                setMetalType(toArray(data.metalType));
+                setMetalColor(toArray(data.metalColor));
+                setStoneType(toArray(data.stoneType));
+                setGender(toArray(data.gender));
+                setOccasion(toArray(data.occasion));
+                setCollectionName(toArray(data.collectionName));
+
+            } catch (error) {
+                console.error('Failed to fetch product', error);
+            }
+        };
+
         fetchCategories();
-    }, []);
+        fetchProduct();
+    }, [id]);
 
     const uploadFileHandler = async (e) => {
         const file = e.target.files[0];
         const formData = new FormData();
         formData.append('image', file);
         setUploading(true);
+
         try {
             const { data } = await api.post('/upload', formData);
             setImage(data.url);
@@ -126,7 +166,7 @@ const AddProduct = () => {
     const submitHandler = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/products', {
+            await api.put(`/products/${id}`, {
                 name, price, image, brand, category,
                 description, productDetails, countInStock,
                 weight, carat, material, size,
@@ -134,29 +174,20 @@ const AddProduct = () => {
             });
             navigate('/products');
         } catch (error) {
-            console.error('Create Product Error:', error);
+            console.error('Update Product Error:', error);
             const message = error.response && error.response.data.message
                 ? error.response.data.message
                 : error.message;
-            alert(`Error creating product: ${message}`);
+            alert(`Error updating product: ${message}`);
         }
     };
 
-    // --- Derived Options ---
     const styleOptions = CATEGORY_STYLES[category] || DEFAULT_STYLE_OPTIONS;
-
-    // Reset style when category changes is ideal, but might be annoying if user changes cat accidentally. 
-    // For now, just dynamic options.
-
-    useEffect(() => {
-        // Optional: Reset style if it doesn't match new category options?
-        // Let's keep it simple: just show relevant options.
-    }, [category]);
 
     return (
         <Container className="py-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2 className="mb-0 fw-bold text-dark">Add New Product</h2>
+                <h2 className="mb-0 fw-bold text-dark">Edit Product</h2>
                 <Button variant="outline-secondary" onClick={() => navigate('/products')}>Cancel</Button>
             </div>
 
@@ -187,10 +218,7 @@ const AddProduct = () => {
                                     <Col md={6}>
                                         <Form.Group className="mb-3" controlId="category">
                                             <Form.Label>Category</Form.Label>
-                                            <Form.Select value={category} onChange={(e) => {
-                                                setCategory(e.target.value);
-                                                setStyle([]); // Reset style on category change
-                                            }} required>
+                                            <Form.Select value={category} onChange={(e) => setCategory(e.target.value)} required>
                                                 <option value="">Select Category</option>
                                                 {categories.map((cat) => (
                                                     <option key={cat._id} value={cat.name}>{cat.name}</option>
@@ -213,7 +241,6 @@ const AddProduct = () => {
                                         <MultiSelect label="Occasion" options={OCCASION_OPTIONS} value={occasion} onChange={setOccasion} />
                                     </Col>
                                     <Col md={4}>
-                                        {/* Dynamic Style Options */}
                                         <MultiSelect label="Style" options={styleOptions} value={style} onChange={setStyle} />
                                     </Col>
                                 </Row>
@@ -231,8 +258,7 @@ const AddProduct = () => {
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3" controlId="collectionName">
-                                            <Form.Label>Collection (Type to add, comma separated if needed)</Form.Label>
-                                            {/* For Collection, keeping it text for flexibility, but parsing to array if needed or just single string in array */}
+                                            <Form.Label>Collection (Type to add)</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 placeholder="e.g. Butterfly"
@@ -328,9 +354,9 @@ const AddProduct = () => {
                     </Col>
                 </Row>
 
-                <div className="d-grid gap-2">
-                    <Button variant="primary" size="lg" type="submit" disabled={uploading} className="shadow-sm">
-                        {uploading ? 'Processing...' : 'Create Product'}
+                <div className="d-grid gap-2 mb-5">
+                    <Button variant="primary" size="lg" type="submit" disabled={uploading}>
+                        {uploading ? 'Processing...' : 'Update Product'}
                     </Button>
                 </div>
             </Form>
@@ -338,4 +364,4 @@ const AddProduct = () => {
     );
 };
 
-export default AddProduct;
+export default EditProduct;

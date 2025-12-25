@@ -1,43 +1,53 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Container, Row, Col } from 'react-bootstrap';
-import Header from './components/Header';
+import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import ProductList from './pages/ProductList';
+import CategoryList from './pages/CategoryList';
 import OrderList from './pages/OrderList';
 import AddProduct from './pages/AddProduct';
+import EditProduct from './pages/EditProduct';
 import Login from './pages/Login';
+import RequireAuth from './components/RequireAuth';
+import OrderDetails from './pages/OrderDetails';
+import UsersList from './pages/UsersList';
+import UserDetails from './pages/UserDetails';
+import ProductAnalytics from './pages/ProductAnalytics';
 import './App.css';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={
-          <div className="d-flex flex-column min-vh-100">
-            <Header />
-            <Container fluid className="flex-grow-1">
-              <Row className="h-100">
-                <Col md={2} className="bg-light sidebar p-0">
-                  <Sidebar />
-                </Col>
-                <Col md={10} className="p-4">
+    <ToastProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={
+            <RequireAuth>
+              <div className="d-flex min-vh-100">
+                <Sidebar />
+                <div className="main-content-area p-4">
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/products" element={<ProductList />} />
+                    <Route path="/products/:id/edit" element={<EditProduct />} />
+                    <Route path="/categories" element={<CategoryList />} />
                     <Route path="/products/add" element={<AddProduct />} />
                     <Route path="/orders" element={<OrderList />} />
+                    <Route path="/orders/:id" element={<OrderDetails />} />
+                    <Route path="/users" element={<UsersList />} />
+                    <Route path="/users/:id" element={<UserDetails />} />
+                    <Route path="/product-analytics" element={<ProductAnalytics />} />
                   </Routes>
-                </Col>
-              </Row>
-            </Container>
-          </div>
-        } />
-      </Routes>
-    </Router>
+                </div>
+              </div>
+            </RequireAuth>
+          } />
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 
 export default App;
+

@@ -9,9 +9,16 @@ const Login = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
-            navigate('/');
+        try {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            if (userInfo && userInfo.isAdmin) {
+                navigate('/');
+            } else if (userInfo && !userInfo.isAdmin) {
+                // Remove non-admin user from storage to prevent loops and allow fresh login
+                localStorage.removeItem('userInfo');
+            }
+        } catch (error) {
+            localStorage.removeItem('userInfo');
         }
     }, [navigate]);
 
@@ -66,7 +73,7 @@ const Login = () => {
                                 Sign In
                             </Button>
                             <div className="mt-3 text-center text-muted">
-                                <small>Use: admin@example.com / 123456</small>
+                                <small>Use: admin@example.com / Admin123</small>
                             </div>
                         </Form>
                     </div>
