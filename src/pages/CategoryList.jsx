@@ -13,7 +13,13 @@ const CategoryList = () => {
 
     useEffect(() => {
         fetchCategories();
-        const socket = io('http://localhost:5000');
+
+        // Derive socket URL
+        const baseUrl = api.defaults.baseURL || 'http://localhost:5000/api';
+        const socketUrl = baseUrl.replace('/api', '');
+
+        const socket = io(socketUrl);
+
         socket.on('data_updated', () => {
             fetchCategories();
         });

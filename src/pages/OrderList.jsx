@@ -25,7 +25,11 @@ const OrderList = () => {
     useEffect(() => {
         fetchOrders();
 
-        const socket = io('http://localhost:5000');
+        // Derive socket URL
+        const baseUrl = api.defaults.baseURL || 'http://localhost:5000/api';
+        const socketUrl = baseUrl.replace('/api', '');
+
+        const socket = io(socketUrl);
 
         socket.on('order_created', () => {
             fetchOrders();
@@ -162,9 +166,9 @@ const OrderList = () => {
                                 <td>${order.totalPrice}</td>
                                 <td>
                                     <span className={`badge bg-${order.orderStatus === 'Delivered' ? 'success' :
-                                            order.orderStatus === 'Shipped' ? 'info' :
-                                                order.orderStatus === 'Accepted' ? 'primary' :
-                                                    order.orderStatus === 'Cancelled' ? 'danger' : 'warning'
+                                        order.orderStatus === 'Shipped' ? 'info' :
+                                            order.orderStatus === 'Accepted' ? 'primary' :
+                                                order.orderStatus === 'Cancelled' ? 'danger' : 'warning'
                                         }`}>
                                         {order.orderStatus}
                                     </span>
